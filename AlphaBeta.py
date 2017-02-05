@@ -6,10 +6,15 @@ map = { 1: 'a',
         5 :'e',
         6 :'f',
         7 :'g',
-        8 :'h'
+        8 :'h',
+        float('inf')  : "Infinity",
+        float('-inf') : "-Infinity"
         }
 
-def Evaluate(state):
+logs = []
+flag = 1
+
+def Evaluate(state,current,opponent):
     c_eval = 0
     o_eval = 0
     for i,row in enumerate(state):
@@ -18,16 +23,11 @@ def Evaluate(state):
                 c_eval += eval[i][j]
             elif col == opponent:
                 o_eval += eval[i][j]
-    return (o_eval - c_eval)
+    return (c_eval - o_eval)
 
 def onBoard(i,j):
     return i >= 0 and i <=7 and j >=0 and j<=7
 
-def swap():
-    global current,opponent
-    temp = current
-    current = opponent
-    opponent = temp
 
 def Valid(state, startx, starty):
     if not onBoard(startx,starty) and state[startx][starty] != '*':
@@ -88,6 +88,12 @@ def Terminal(state,depth):
 
 
 def display(param,d,val,a,b):
+    if a == float('inf') or a == float('-inf'):
+        a = map[a]
+    if b == float('inf') or b == float('-inf'):
+        b = map[b]
+    if val == float('inf') or val == float('-inf'):
+        val = map[val]
     if param == "root" or d == 0:
         first = "root"
     elif param == "pass":
@@ -95,35 +101,39 @@ def display(param,d,val,a,b):
     else:
         first = param
     print first, d, val, a, b
+    logs.append("%s,%d,%s,%s,%s\n" % (first,d,str(val),str(a),str(b)))
+
 
 #print ValidMoves(state)
 def AlphaBeta(state):
     val = Max(state, float('-inf'), float('inf'), 0 , "root")
 
 def Max(state, a , b , depth , param):
-    global pass_val
+    global pass_val,flag
     val = float('-inf')
 
     if Terminal(state,depth):
-        val = Evaluate(state)
+        val = Evaluate(state,'X','O')
         display(param, depth, val, a, b)
         return val
-
-    display(param, depth, val, a, b)
+    if pass_val != 2:
+        display(param, depth, val, a, b)
 
     actions = ValidMoves(state)
     if not actions:
         if pass_val < 2:
             pass_val = pass_val + 1
-            swap()
-            #display(0, 0, depth, val, a, b)
+            if depth == 0 and flag:
+                for l in state:
+                    output.write("".join(l)+"\n")
+                flag = 0
             val = max(val,Min(state, a , b, depth +1,"pass"))
             if val >= b:
                 display(param, depth, val, a, b)
                 return val
             a = max(a,val)
         elif pass_val == 2:
-            val = Evaluate(state)
+            val = Evaluate(state,'X','O')
             display(param, depth, val, a, b)
             return val
         else:
@@ -137,8 +147,11 @@ def Max(state, a , b , depth , param):
         flips = Valid(board,i[0],i[1])
         for x,y in flips:
             board[x][y] = current
+        if depth == 0 and flag:
+            for l in board:
+                output.write("".join(l)+"\n")
+            flag = 0
         param = str(map[i[1]+1])+str(i[0]+1)
-        swap()
         val = max(val,Min(board, a, b ,depth+1,param))
         if val >= b:
             display(param, depth, val, a, b)
@@ -152,39 +165,37 @@ def Min(state, a , b , depth,param):
     global pass_val
     val = float('inf')
     if Terminal(state,depth):
-        val = Evaluate(state)
+        val = Evaluate(state,'X','O')
         display(param, depth, val, a, b)
         return val
-    display(param, depth, val, a, b)
+    if pass_val != 2:
+        display(param, depth, val, a, b)
 
     actions = ValidMoves(state)
     if not actions:
         if pass_val < 2:
             pass_val = pass_val + 1
-            swap()
-
             val = min(val,Max(state, a , b, depth +1,"pass"))
             if val <= a:
                 display(param, depth, val, a, b)
                 return val
             b = min(b, val)
         elif pass_val == 2:
-            val = Evaluate(state)
+            val = Evaluate(state,'O','X')
             display(param, depth, val, a, b)
             return val
         else:
             pass_val = 0
         display(param, depth, val, a, b)
         return val
-    for i in actions:
 
+    for i in actions:
         board = copy.deepcopy(state)
         board[i[0]][i[1]] = current
         flips = Valid(board,i[0],i[1])
         for x,y in flips:
             board[x][y] = current
         param = str(map[i[1] + 1]) + str(i[0]+1)
-        swap()
         val = min(val, Max(state, a, b, depth + 1))
         if val <= a:
             display(param, depth, val, a, b)
@@ -195,8 +206,8 @@ def Min(state, a , b , depth,param):
 
 
 
-input = open('input1.txt','r')
-output = open('output.txt','w')
+input = open('input3.txt','r')
+output = open('shreyas3.txt','w')
 
 current = input.readline().strip()
 if current == 'X':
@@ -229,3 +240,6 @@ eval = [ [ 99, -8 , 8, 6, 6 , 8, -8, 99],
         ]
 
 AlphaBeta(state)
+output.write("Node,Depth,Value,Alpha,Beta\n")
+for i in logs:
+    output.write(i)
