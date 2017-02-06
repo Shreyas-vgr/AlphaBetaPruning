@@ -116,6 +116,7 @@ def Max(state, a , b , depth , param):
     if Terminal(state,depth):
         val = Evaluate(state,curr,opp)
         display(param, depth, val, a, b)
+        pass_val = 0
         return val
     #if pass_val != 2:
         #display(param, depth, val, a, b)
@@ -135,11 +136,12 @@ def Max(state, a , b , depth , param):
                 return val
             a = max(a,val)
         elif pass_val == 2:
-            val = Evaluate(state,curr,opp)
             display(param, depth, val, a, b)
-            return val
-        else:
+            val = Evaluate(state, curr, opp)
             pass_val = 0
+            return val
+
+        pass_val = 0
         display(param, depth, val, a, b)
         return val
     old_param = param
@@ -175,6 +177,7 @@ def Min(state, a , b , depth,param):
     if Terminal(state,depth):
         val = Evaluate(state,opp,curr)
         display(param, depth, val, a, b)
+        pass_val = 0
         return val
     #if pass_val != 2:
         #display(param, depth, val, a, b)
@@ -190,11 +193,12 @@ def Min(state, a , b , depth,param):
                 return val
             b = min(b, val)
         elif pass_val == 2:
-            val = Evaluate(state,curr,opp)
             display(param, depth, val, a, b)
-            return val
-        else:
+            val = Evaluate(state, curr, opp)
             pass_val = 0
+            return val
+
+        pass_val = 0
         display(param, depth, val, a, b)
         return val
     old_param = param
@@ -217,8 +221,8 @@ def Min(state, a , b , depth,param):
 
 
 
-input = open('input3.txt','r')
-output = open('shreyas3.txt','w')
+input = open('input.txt','r')
+output = open('ouput.txt','w')
 
 current = input.readline().strip()
 if current == 'X':
