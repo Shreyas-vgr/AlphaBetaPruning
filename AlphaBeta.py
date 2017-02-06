@@ -29,8 +29,8 @@ def onBoard(i,j):
     return i >= 0 and i <=7 and j >=0 and j<=7
 
 
-def Valid(state, startx, starty):
-    if not onBoard(startx,starty) and state[startx][starty] != '*':
+def Valid(state, startx, starty,current,opponent):
+    if not onBoard(startx,starty):
         return False
     temp = state[startx][starty]
     state[startx][starty] = current
@@ -45,7 +45,7 @@ def Valid(state, startx, starty):
             j += Y
             if not onBoard(i,j):
                 continue
-            while state[i][j] == opponent and not onBoard(i,j):
+            while onBoard(i,j) and state[i][j] == opponent:
                 i += X
                 j += Y
             if not onBoard(i,j):
@@ -63,11 +63,11 @@ def Valid(state, startx, starty):
         return False
     return flips
 
-def ValidMoves(state):
+def ValidMoves(state,curr,opp):
     valid_moves = []
     for i in xrange(8):
         for j in xrange(8):
-            if Valid(state,i,j):
+            if state[i][j] == '*' and Valid(state,i,j,curr,opp):
                 valid_moves.append([i,j])
     return valid_moves
 
@@ -101,25 +101,26 @@ def display(param,d,val,a,b):
     else:
         first = param
     print first, d, val, a, b
-    logs.append("%s,%d,%s,%s,%s\n" % (first,d,str(val),str(a),str(b)))
+    logs.append("\n%s,%d,%s,%s,%s" % (first,d,str(val),str(a),str(b)))
 
 
-#print ValidMoves(state)
 def AlphaBeta(state):
     val = Max(state, float('-inf'), float('inf'), 0 , "root")
 
 def Max(state, a , b , depth , param):
     global pass_val,flag
+    curr = 'X'
+    opp = 'O'
     val = float('-inf')
 
     if Terminal(state,depth):
-        val = Evaluate(state,'X','O')
+        val = Evaluate(state,curr,opp)
         display(param, depth, val, a, b)
         return val
-    if pass_val != 2:
-        display(param, depth, val, a, b)
+    #if pass_val != 2:
+        #display(param, depth, val, a, b)
 
-    actions = ValidMoves(state)
+    actions = ValidMoves(state, curr, opp)
     if not actions:
         if pass_val < 2:
             pass_val = pass_val + 1
@@ -127,81 +128,91 @@ def Max(state, a , b , depth , param):
                 for l in state:
                     output.write("".join(l)+"\n")
                 flag = 0
+            display(param, depth, val, a, b)
             val = max(val,Min(state, a , b, depth +1,"pass"))
             if val >= b:
                 display(param, depth, val, a, b)
                 return val
             a = max(a,val)
         elif pass_val == 2:
-            val = Evaluate(state,'X','O')
+            val = Evaluate(state,curr,opp)
             display(param, depth, val, a, b)
             return val
         else:
             pass_val = 0
         display(param, depth, val, a, b)
         return val
+    old_param = param
     for i in actions:
         #print map[i[1]+1],i[0]+1,depth,val,a,b
+        display(old_param, depth, val, a, b)
         board = copy.deepcopy(state)
-        board[i[0]][i[1]] = current
-        flips = Valid(board,i[0],i[1])
+        board[i[0]][i[1]] = curr
+        flips = Valid(board,i[0],i[1],curr,opp)
         for x,y in flips:
-            board[x][y] = current
+            board[x][y] = curr
         if depth == 0 and flag:
             for l in board:
                 output.write("".join(l)+"\n")
             flag = 0
         param = str(map[i[1]+1])+str(i[0]+1)
+
         val = max(val,Min(board, a, b ,depth+1,param))
         if val >= b:
-            display(param, depth, val, a, b)
+            display(old_param, depth, val, a, b)
             return val
         a = max(a,val)
-    display(param, depth, val, a, b)
+        #display(old_param, depth, val, a, b)
+    display(old_param, depth, val, a, b)
     return val
 
 def Min(state, a , b , depth,param):
 
     global pass_val
     val = float('inf')
+    curr = 'O'
+    opp = 'X'
     if Terminal(state,depth):
-        val = Evaluate(state,'X','O')
+        val = Evaluate(state,opp,curr)
         display(param, depth, val, a, b)
         return val
-    if pass_val != 2:
-        display(param, depth, val, a, b)
+    #if pass_val != 2:
+        #display(param, depth, val, a, b)
 
-    actions = ValidMoves(state)
+    actions = ValidMoves(state,curr,opp)
     if not actions:
         if pass_val < 2:
             pass_val = pass_val + 1
+            display(param, depth, val, a, b)
             val = min(val,Max(state, a , b, depth +1,"pass"))
             if val <= a:
                 display(param, depth, val, a, b)
                 return val
             b = min(b, val)
         elif pass_val == 2:
-            val = Evaluate(state,'O','X')
+            val = Evaluate(state,curr,opp)
             display(param, depth, val, a, b)
             return val
         else:
             pass_val = 0
         display(param, depth, val, a, b)
         return val
-
+    old_param = param
     for i in actions:
+
+        display(old_param, depth, val, a, b)
         board = copy.deepcopy(state)
-        board[i[0]][i[1]] = current
-        flips = Valid(board,i[0],i[1])
+        board[i[0]][i[1]] = curr
+        flips = Valid(board,i[0],i[1],curr,opp)
         for x,y in flips:
-            board[x][y] = current
+            board[x][y] = curr
         param = str(map[i[1] + 1]) + str(i[0]+1)
-        val = min(val, Max(state, a, b, depth + 1))
+        val = min(val, Max(board, a, b, depth + 1,param))
         if val <= a:
-            display(param, depth, val, a, b)
+            display(old_param, depth, val, a, b)
             return val
         b = min(b,val)
-    display(param, depth, val, a, b)
+    display(old_param, depth, val, a, b)
     return val
 
 
@@ -234,12 +245,12 @@ eval = [ [ 99, -8 , 8, 6, 6 , 8, -8, 99],
          [ 6, -3 , 4, 0, 0 , 4, -3, 6],
          [ 6, -3 , 4, 0, 0 , 4, -3, 6],
          [ 8, -4 , 7, 4, 4 , 7, -4, 8],
-         [ -8, -4 , 7, 4, 4 , 7, -4, 8],
          [  -8, -24 , -4, -3, -3 , -4, -24, -8],
          [  99, -8 , 8, 6, 6 , 8, -8, 99 ]
         ]
 
 AlphaBeta(state)
 output.write("Node,Depth,Value,Alpha,Beta\n")
+logs[0] = logs[0][1:]
 for i in logs:
     output.write(i)
